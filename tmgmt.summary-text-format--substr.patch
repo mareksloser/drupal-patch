@@ -1,0 +1,72 @@
+Subject: [PATCH] Text with Summary field type translation saves value with html tags
+---
+Index: translators/tmgmt_local/src/Form/LocalTaskItemForm.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/translators/tmgmt_local/src/Form/LocalTaskItemForm.php b/translators/tmgmt_local/src/Form/LocalTaskItemForm.php
+--- a/translators/tmgmt_local/src/Form/LocalTaskItemForm.php	(revision 9cb3b80d70d92782d53d172934c2dc3a2c0d798b)
++++ b/translators/tmgmt_local/src/Form/LocalTaskItemForm.php	(date 1679485359979)
+@@ -245,7 +245,7 @@
+           /** @var \Drupal\filter\Entity\FilterFormat $format */
+           $format = FilterFormat::load($format_id);
+ 
+-          if ($format && $format->access('use')) {
++          if ($format && $format->access('use') && substr($target_key, -7) !== 'summary') {
+             // In case a user has permission to translate the content using
+             // selected text format, add a format id into the list of allowed
+             // text formats. Otherwise, no text format will be used.
+Index: src/Form/JobItemForm.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Form/JobItemForm.php b/src/Form/JobItemForm.php
+--- a/src/Form/JobItemForm.php	(revision 9cb3b80d70d92782d53d172934c2dc3a2c0d798b)
++++ b/src/Form/JobItemForm.php	(date 1679485359932)
+@@ -483,8 +483,8 @@
+         \Drupal::moduleHandler()->alter('tmgmt_data_item_text_output', $source_text, $translation_text, $contexts);
+ 
+         // Build source and translation areas.
+-        $item_element = $this->buildSource($item_element, $source_text, $data_item, $rows, $form_state);
+-        $item_element = $this->buildTranslation($item_element, $translation_text, $data_item, $rows, $form_state, $is_preliminary);
++        $item_element = $this->buildSource($item_element, $source_text, $data_item, $rows, $form_state, $field_name);
++        $item_element = $this->buildTranslation($item_element, $translation_text, $data_item, $rows, $form_state, $is_preliminary, $field_name);
+ 
+         $item_element = $this->buildChangedSource($item_element, $form_state, $field_name, $key, $ajax_id);
+ 
+@@ -966,12 +966,14 @@
+    *   The form state.
+    * @param bool $is_preliminary
+    *   TRUE is the data item is in the PRELIMINARY STATE, FALSE otherwise.
++   * @param string $field_name
++   *   The field name.
+    *
+    * @return array
+    *   The form element for the data item.
+    */
+-  protected function buildTranslation($item_element, $translation_text, $data_item, $rows, FormStateInterface $form_state, $is_preliminary) {
+-    if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item')) {
++  protected function buildTranslation($item_element, $translation_text, $data_item, $rows, FormStateInterface $form_state, $is_preliminary, $field_name) {
++    if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item') && substr($field_name, -7) !== 'summary') {
+       $item_element['translation'] = array(
+         '#type' => 'text_format',
+         '#default_value' => $translation_text,
+@@ -1042,12 +1044,14 @@
+    *   The number of rows that should be displayed.
+    * @param \Drupal\Core\Form\FormStateInterface $form_state
+    *   The form state.
++   * @param string $field_name
++   *   The field name.
+    *
+    * @return array
+    *   The form element for the data item.
+    */
+-  protected function buildSource($item_element, $source_text, $data_item, $rows, FormStateInterface $form_state) {
+-    if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item')) {
++  protected function buildSource($item_element, $source_text, $data_item, $rows, FormStateInterface $form_state, $field_name) {
++      if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item') && substr($field_name, -7) !== 'summary') {
+       $item_element['source'] = array(
+         '#type' => 'text_format',
+         '#default_value' => $source_text,
